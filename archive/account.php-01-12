@@ -1,0 +1,484 @@
+<?php
+
+require_once 'account.civix.php';
+
+use CRM_Account_ExtensionUtil as E;
+
+/**
+ * Implements hook_civicrm_config().
+ *
+ * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_config/
+ */
+function account_civicrm_config(&$config): void {
+  _account_civix_civicrm_config($config);
+}
+
+/**
+ * Implements hook_civicrm_install().
+ *
+ * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_install
+ */
+function account_civicrm_install(): void {
+  _account_civix_civicrm_install();
+}
+
+/**
+ * Implements hook_civicrm_enable().
+ *
+ * @link https://docs.civicrm.org/dev/en/latest/hooks/hook_civicrm_enable
+ */
+function account_civicrm_enable(): void {
+  _account_civix_civicrm_enable();
+}
+
+/**
+ * This example compares the submitted value of a field with its current value.
+ *
+ * @param string $op
+ *   The type of operation being performed.
+ * @param int $groupID
+ *   The custom group ID.
+ * @param int $entityID
+ *   The entityID of the row in the custom table.
+ * @param array $params
+ *   The parameters that were sent into the calling function.
+ */
+
+//function account_civicrm_post(string $op, string $objectName, int $objectId, &$objectRef) {
+function account_civicrm_post($op, $objectName, $objectId, &$objectRef) {
+
+ 	$extdebug		= 0; // 1 = basic // 2 = verbose // 3 = params / 4 = results
+
+	if ($objectName === 'XIndividual') {
+	    if ($op === 'edit') {
+			}
+
+		wachthond($extdebug,3, "########################################################################");
+		wachthond($extdebug,1, "#### HOOK POST");
+		wachthond($extdebug,3, "########################################################################");
+		wachthond($extdebug,1, 'post op', 					$op);
+		wachthond($extdebug,1, 'post objectName', 	$objectName);
+		wachthond($extdebug,1, 'post objectId', 		$objectId);
+		wachthond($extdebug,1, 'post objectRef', 		$objectRef);
+		wachthond($extdebug,3, "########################################################################");
+
+	}
+
+ 	if ($objectName === 'XCustomGroup') {
+
+		wachthond($extdebug,3, "########################################################################");
+		wachthond($extdebug,1, "#### HOOK POST CUSTOMGROUP");
+		wachthond($extdebug,3, "########################################################################");
+	  	wachthond($extdebug,1, 'post op', 					$op);
+	  	wachthond($extdebug,1, 'post objectName', 	$objectName);
+	  	wachthond($extdebug,1, 'post objectId', 		$objectId);
+	  	wachthond($extdebug,1, 'post objectRef', 		$objectRef);
+		wachthond($extdebug,3, "########################################################################");
+	  	wachthond($extdebug,1, 'postCommit CustomGroup', $objectId);
+		wachthond($extdebug,3, "########################################################################");
+ 	}
+
+ 	if ($objectName === 'CustomField') {
+
+		wachthond($extdebug,3, "########################################################################");
+		wachthond($extdebug,1, "#### HOOK POST CUSTOMFIELD");
+		wachthond($extdebug,3, "########################################################################");
+	  	wachthond($extdebug,1, 'post op', 					$op);
+	  	wachthond($extdebug,1, 'post objectName', 	$objectName);
+	  	wachthond($extdebug,1, 'post objectId', 		$objectId);
+	  	wachthond($extdebug,1, 'post objectRef', 		$objectRef);
+		wachthond($extdebug,3, "########################################################################");
+	  	wachthond($extdebug,1, 'postCommit CustomField', $objectId);
+		wachthond($extdebug,3, "########################################################################");
+ 	}
+
+}
+
+function account_civicrm_custom($op, $groupID, $entityID, &$params) {
+
+	$extdebug				= 3; 	// 	1 = basic // 2 = verbose // 3 = params / 4 = results
+	$apidebug				= FALSE;
+
+	$profileprivacy 		= array(286);
+
+	if ($op != 'create' && $op != 'edit') { //    did we just create or edit a custom object?
+		wachthond($extdebug,4, "########################################################################");
+		wachthond($extdebug,4, "EXIT: OP != CREATE OR OP != EDIT",                            "(OP: $OP)");
+		wachthond($extdebug,4, "########################################################################");
+		return; //	if not, get out of here
+	}
+
+	if (!in_array($groupID, $profileprivacy)) { // PROFILE PRIVACY
+		wachthond($extdebug,4, "########################################################################");
+		wachthond($extdebug,4, "EXIT: groupID ($groupID) != profileprivacy",          "($profileprivacy)");
+		wachthond($extdebug,4, "########################################################################");
+		return; //	if not, get out of here
+	}
+
+	$contact_id = $entityID;
+
+	wachthond($extdebug,1, "########################################################################");
+	wachthond($extdebug,1, "### ACCOUNT - CUSTOM - CONFIGURE ONETIMELINK FOR $entityID", "[groupID: $groupID / op: $op]");
+	wachthond($extdebug,3, "########################################################################");
+
+	wachthond($extdebug,4, "entityid",		$entityID);
+  	wachthond($extdebug,4, "params",		$params);
+
+	account_civicrm_configure($contact_id);
+
+}
+
+function account_civicrm_configure($contactid) {
+
+	$extdebug				= 1; 	// 	1 = basic // 2 = verbose // 3 = params / 4 = results
+	$apidebug				= FALSE;
+
+	$profileprivacy 		= array(286);
+	$today_datetime 		= date("Y-m-d H:i:s");
+
+	$crm_contactid 			= $contactid;
+
+	$new_onetimelink_array 	= NULL;
+	$new_checksum_array 	= NULL;
+
+	wachthond($extdebug,1, "########################################################################");
+	wachthond($extdebug,1, "### ACCOUNT - START ONETIMELINK & CHECKSUM VOOR $crm_contactid");
+	wachthond($extdebug,3, "########################################################################");
+
+	$params_contact = [
+		'checkPermissions' => FALSE,
+		'debug' => $apidebug,
+ 		'limit' => 1,
+		'select' => [
+  			'id',
+  			'contact_id',
+  			'birth_date', 
+  			'email.email',
+  			'display_name',
+  			'job_title',
+  			'external_identifier',
+
+  			'WERVING.nextkamp_rondjaren',
+
+  			'PRIVACY.onetimelink_url',
+  			'PRIVACY.onetimelink_date',
+  			'PRIVACY.checksum',
+  			'PRIVACY.checksum_date',
+		],
+		'join' => [
+  			['Email AS email', 'LEFT', ['id', '=', 'email.contact_id']],
+		],
+		'where' => [
+  			['id', '=', $crm_contactid],
+		],
+	];
+
+	wachthond($extdebug,5, 'params_continfo', 								$params_contact);
+	if ($crm_contactid) { $result_contact = civicrm_api4('Contact', 'get', 	$params_contact); }
+	wachthond($extdebug,4, 'result_contact', 								$result_contact);
+
+	if ($result_contact[0]['display_name']) 		{	$display_name	= ucfirst(trim($result_contact[0]['display_name']));	}
+	if ($result_contact[0]['job_title']) 			{	$crm_drupalnaam	= trim($result_contact[0]['job_title']);				}
+	if ($result_contact[0]['external_identifier']) 	{	$crm_drupalid	= trim($result_contact[0]['external_identifier']);		}
+
+	$leeftijd_rond				= trim($result_contact[0]['WERVING.nextkamp_rondjaren'])	?? NULL; 
+	$privacy_onetimelink_date 	= $result_contact[0]['PRIVACY.onetimelink_date'] 			?? NULL;
+	$privacy_checksum_date	  	= $result_contact[0]['PRIVACY.checksum_date'] 				?? NULL;
+
+	wachthond($extdebug,2, 'display_name', 							$display_name);
+	wachthond($extdebug,2, 'crm_contactid', 						$crm_contactid);
+	wachthond($extdebug,2, 'crm_drupalnaam', 						$crm_drupalnaam);
+	wachthond($extdebug,2, 'crm_drupalid', 							$crm_drupalid);
+	wachthond($extdebug,2, 'leeftijd_rond', 						$leeftijd_rond);
+	wachthond($extdebug,2, 'privacy_onetimelink_date', 				$privacy_onetimelink_date);
+	wachthond($extdebug,2, 'privacy_checksum_date', 				$privacy_checksum_date);
+
+	wachthond($extdebug,1, "########################################################################");
+	wachthond($extdebug,1, "### ACCOUNT - ONETIME LOGIN LINK VOOR $display_name",		     "[PREP]");
+	wachthond($extdebug,3, "########################################################################");
+
+	$onetimelink_date_infiscalyear = infiscalyear($privacy_onetimelink_date, $today_datetime);
+	wachthond($extdebug,2, "onetimelink_date_infiscalyear",	$onetimelink_date_infiscalyear);
+
+	if ($onetimelink_date_infiscalyear != 1) {
+	$new_onetimelink_array	= account_generate_onetimelink($crm_drupalid,	$privacy_onetimelink_date);
+		$new_onetimelink_url		= $new_onetimelink_array['onetimelink_url'] 	?? NULL;
+		$new_onetimelink_date		= $new_onetimelink_array['onetimelink_date'] 	?? NULL;
+		wachthond($extdebug,2, 'new_onetimelink_url',				$new_onetimelink_url);
+		wachthond($extdebug,2, 'new_onetimelink_date',				$new_onetimelink_date);
+		$write_onetimelink = account_write_onetimelink($crm_contactid, $new_onetimelink_url, $new_onetimelink_date);
+	}
+
+	wachthond($extdebug,3, "########################################################################");
+	wachthond($extdebug,1, "### ACCOUNT - CHECKSUM", 										 "[PREP]");
+	wachthond($extdebug,3, "########################################################################");
+
+	$checksum_date_infiscalyear = infiscalyear($privacy_checksum_date, $today_datetime);
+	wachthond($extdebug,2, "checksum_date_infiscalyear",	$checksum_date_infiscalyear);
+	
+	if ($checksum_date_infiscalyear != 1) {
+		$new_checksum_array 		= account_generate_checksum($crm_contactid,		$privacy_checksum_date);
+		$new_checksum_code			= $new_checksum_array['checksum_code'] 		?? NULL;
+		$new_checksum_date			= $new_checksum_array['checksum_date'] 	 	?? NULL;
+		$new_onetimelink_request= $new_checksum_array['onetimelink_request'] 	?? NULL;
+		wachthond($extdebug,2, 'new_checksum_code',					$new_checksum_code);
+		wachthond($extdebug,2, 'new_checksum_date',					$new_checksum_date);
+		wachthond($extdebug,2, 'new_onetimelink_request',			$new_onetimelink_request);
+		$write_checksum = account_write_checksum($crm_contactid, $new_checksum_code, $new_checksum_date, $new_onetimelink_request);
+
+	}
+
+	if ($write_onetimelink == 1) {
+
+		wachthond($extdebug,3, "########################################################################");
+		wachthond($extdebug,1, "### ACCOUNT - ONETIME LOGIN LINK", 								 "[SEND]");
+		wachthond($extdebug,3, "########################################################################");
+
+		// $email_onetimelink = account_send_onetimelink($crm_contactid);
+	}
+
+	wachthond($extdebug,1, "########################################################################");
+	wachthond($extdebug,1, "### ACCOUNT - EINDE ONETIMELINK & CHECKSUM VOOR $display_name");
+	wachthond($extdebug,1, "########################################################################");
+
+}
+
+function account_generate_onetimelink($cmsid, $checkdate)
+{
+	$extdebug = 0;  	// 1 = basic // 2 = verbose // 3 = params / 4 = results
+	$apidebug = FALSE;
+
+	if ($cmsid == NULL) {
+		wachthond($extdebug,2, 'cmsid',		"[EMPTY]");
+		return;
+	}
+	if ($checkdate == NULL) {
+		wachthond($extdebug,2, 'checkdate', "[EMPTY]");
+		//  return; // this value can be empty
+	}
+
+	$privacy_drupalid			= $cmsid;
+	$privacy_onetimelink_date 	= $checkdate ?? NULL;
+	$today_datetime 	  		= date("Y-m-d H:i:s");
+
+	$today_fiscalyear 			= curriculum_civicrm_fiscalyear($today_datetime);
+	$today_fiscalyear_einde		= $today_fiscalyear['fiscalyear_einde'] ?? NULL;
+
+	wachthond($extdebug,3, "########################################################################");
+	wachthond($extdebug,1, "### ACCOUNT - ONETIME LOGIN LINK",  						   "[CREATE]");
+	wachthond($extdebug,3, "########################################################################");
+
+	wachthond($extdebug,3, "privacy_drupalid", 				$privacy_drupalid);
+	wachthond($extdebug,3, 'tdy_fsclyear_eind', 			$today_fiscalyear_einde);
+	wachthond($extdebug,4, "########################################################################");
+
+	$onetimelink_date_infiscalyear = infiscalyear($privacy_onetimelink_date, $today_datetime);
+	wachthond($extdebug,2, "onetimelink_date_infiscalyear",	$onetimelink_date_infiscalyear);
+
+	$diff_until_fiscalyearend	= date_diff(date_create($today_datetime),date_create($today_fiscalyear_einde));
+	$days_until_fiscalyearend	= $diff_until_fiscalyearend->format('%a');
+
+	wachthond($extdebug,2, "today_datetime",				$today_datetime);
+	wachthond($extdebug,2, "today_fiscalyear_einde",		$today_fiscalyear_einde);
+	wachthond($extdebug,2, "days_until_fiscalyearend",		$days_until_fiscalyearend);
+
+	$onetimelink_date 			= $today_datetime;
+	$onetimelink_ttl 			= $days_until_fiscalyearend;
+	$onetimelink_url 			= one_time_login_short_link(
+		$account 	= user_load($privacy_drupalid),
+		$expire 	= '+'. $onetimelink_ttl. ' day',
+		$redirect = 'https://www.onvergetelijk.nl/account'
+	);
+
+	wachthond($extdebug,1, "onetimelink_url",		$onetimelink_url);
+	wachthond($extdebug,1, "onetimelink_ttl",		$onetimelink_ttl);
+	wachthond($extdebug,1, "onetimelink_date",		$onetimelink_date);	
+
+ 	$onetimelink_array = array(
+	    	'onetimelink_url'	=> $onetimelink_url,
+	    	'onetimelink_date'	=> $onetimelink_date,
+	);
+	return $onetimelink_array;
+}
+
+
+function account_generate_checksum($crmid, $checkdate)
+{
+
+	$extdebug = 0;  	// 1 = basic // 2 = verbose // 3 = params / 4 = results
+	$apidebug = FALSE;
+
+	if ($crmid == NULL) {
+		wachthond($extdebug,2, 'cmsid',   "[EMPTY]");
+		return;
+	}
+	if ($checkdate == NULL) {
+		wachthond($extdebug,2, 'checkdate',  "[EMPTY]");
+//  return; // this value can be empty
+	}
+
+	$privacy_contactid			= $crmid;
+	$privacy_checksum_date 		= $checkdate ?? NULL;
+	$today_datetime 			= date("Y-m-d H:i:s");
+
+	$today_fiscalyear 			= curriculum_civicrm_fiscalyear($today_datetime);
+	$today_fiscalyear_einde		= $today_fiscalyear['fiscalyear_einde'] ?? NULL;
+
+	wachthond($extdebug,3, "########################################################################");
+	wachthond($extdebug,1, "### ACCOUNT - LOGIN CHECKSUM",  													 "[CREATE]");
+	wachthond($extdebug,3, "########################################################################");
+
+	$checksum_date_infiscalyear = infiscalyear($privacy_checksum_date, $today_datetime);
+	wachthond($extdebug,3, "checksum_date_infiscalyear",	$checksum_date_infiscalyear);
+
+	$diff_until_fiscalyearend	= date_diff(date_create($today_datetime),date_create($today_fiscalyear_einde));
+	$days_until_fiscalyearend	= $diff_until_fiscalyearend->format('%a');
+
+	wachthond($extdebug,2, "today_datetime",						$today_datetime);
+	wachthond($extdebug,2, "today_fiscalyear_einde",		$today_fiscalyear_einde);
+	wachthond($extdebug,2, "days_until_fiscalyearend",	$days_until_fiscalyearend);
+
+	$checksum_ttl 	 = $days_until_fiscalyearend;
+	$checksum_date 	 = $today_datetime;
+	$checksum_geldig = $today_fiscalyear_einde;
+
+	$create_checksum = civicrm_api4('Contact', 'getChecksum', [
+		'contactId' 				=> $privacy_contactid,
+  	'ttl' 							=> $checksum_ttl,
+  	'checkPermissions' 	=> FALSE,
+	]);
+
+	$checksum_code			= $create_checksum[0]['checksum'];
+	$onetimelink_request	= "https://www.onvergetelijk.nl/form/inloglink?cid1=$privacy_contactid&cs=$checksum_code";
+
+	wachthond($extdebug,1, "contact_checksum (valid for $checksum_ttl days)",	$checksum_code);
+	wachthond($extdebug,1, "webformlink to request a new onetimelogin",			$onetimelink_request);
+
+ 	$checksum_array = array(
+	    'checksum_code'			=> $checksum_code,
+	    'checksum_date'			=> $checksum_date,
+	    'checksum_geldig'		=> $checksum_geldig,
+	    'onetimelink_request'	=> $onetimelink_request,
+	);
+	return $checksum_array;
+
+}
+
+function account_write_onetimelink($crmid, $url, $date)
+{
+
+	$extdebug = 0;  	// 1 = basic // 2 = verbose // 3 = params / 4 = results
+	$apidebug = FALSE;
+
+	wachthond($extdebug,3, "########################################################################");
+	wachthond($extdebug,1, "### ACCOUNT - ONETIME LOGIN LINK",												      "[WRITE]");
+	wachthond($extdebug,3, "########################################################################");
+
+	if ($crmid == NULL) {
+		wachthond($extdebug,2, 'crmid',	"[EMPTY]");
+		return;
+	}
+	if ($url == NULL) {
+		wachthond($extdebug,2, 'url',	"[EMPTY]");
+		return;
+	}
+	if ($date == NULL) {
+		wachthond($extdebug,2, 'date',	"[EMPTY]");
+		return;
+	}
+
+	$privacy_contactid	= $crmid;
+	$onetimelink_url  	= $url;
+	$onetimelink_date 	= $date;
+
+	if ($privacy_contactid AND $onetimelink_url AND $onetimelink_date) {
+		$params_update_onetimelink = [
+			'checkPermissions' => FALSE,
+			'debug' => $apidebug,
+			'where' => [
+				['id', '=', $privacy_contactid],
+			],
+			'values' => [
+				'PRIVACY.onetimelink_url'  => $onetimelink_url,
+				'PRIVACY.onetimelink_date' => $onetimelink_date,
+			],
+		];
+	}
+
+	if ($params_update_onetimelink) {
+		wachthond($extdebug,3, 'params_update_onetimelink', 			$params_update_onetimelink);
+		$result_update_onetimelink = civicrm_api4('Contact', 'update', 	$params_update_onetimelink);
+		wachthond($extdebug,4, 'result_update_onetimelink', 			$result_update_onetimelink);
+	
+		return 1;
+
+	}
+
+}
+
+function account_write_checksum($crmid, $code, $date, $link)
+{
+
+	$extdebug = 0;  	// 1 = basic // 2 = verbose // 3 = params / 4 = results
+	$apidebug = FALSE;
+
+	wachthond($extdebug,3, "########################################################################");
+	wachthond($extdebug,1, "### ACCOUNT - LOGIN CHECKSUM",  													      "[WRITE]");
+	wachthond($extdebug,3, "########################################################################");
+
+	if ($crmid == NULL) {
+		wachthond($extdebug,2, 'crmid',	"[EMPTY]");
+		return;
+	}
+	if ($code == NULL) {
+		wachthond($extdebug,2, 'code',	"[EMPTY]");
+		return;
+	}
+	if ($date == NULL) {
+		wachthond($extdebug,2, 'date',	"[EMPTY]");
+		return;
+	}
+	if ($link == NULL) {
+		wachthond($extdebug,2, 'link',	"[EMPTY]");
+		return;
+	}
+
+	$privacy_contactid		= $crmid;
+	$checksum_code 			= $code;
+	$checksum_date 			= $date;
+	$onetimelink_request	= $link;
+
+	if ($privacy_contactid AND $checksum_code AND $checksum_date AND $onetimelink_request) {
+		$params_update_checksum = [
+			'checkPermissions' => FALSE,
+			'debug' => $apidebug,
+			'where' => [
+				['id', '=', $privacy_contactid],
+			],
+			'values' => [
+				'PRIVACY.checksum'  			=> $checksum_code,
+				'PRIVACY.checksum_date' 		=> $checksum_date,
+				'PRIVACY.onetimelink_request' 	=> $onetimelink_request,
+			],
+		];
+	}
+
+	if ($params_update_checksum) {
+		wachthond($extdebug,3, 'params_update_checksum', 				$params_update_checksum);
+		$result_update_checksum = civicrm_api4('Contact', 'update', 	$params_update_checksum);
+		wachthond($extdebug,4, 'result_update_checksum', 				$result_update_checksum);
+	}
+}
+
+function account_send_onetimelink($crmid) {
+
+	$extdebug = 1;  	// 1 = basic // 2 = verbose // 3 = params / 4 = results
+	$apidebug = FALSE;
+    
+  wachthond($extdebug,1, "### ACCOUNT - ONETIME LOGIN LINK SEND EMAIL", "$crmid");
+
+  civicrm_api3('Email', 'send', [
+    'contact_id'  => $crmid,
+    'template_id' => 596,
+  ]);
+}
