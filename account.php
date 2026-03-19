@@ -46,7 +46,7 @@ function account_civicrm_enable(): void {
 
 function account_civicrm_custom($op, $groupID, $entityID, &$params) {
 
-	$extdebug		= 3; 	// 	1 = basic // 2 = verbose // 3 = params / 4 = results
+	$extdebug		= 0; 	// 	1 = basic // 2 = verbose // 3 = params / 4 = results
 	$apidebug		= FALSE;
 
 	$profileprivacy = array(286);
@@ -80,6 +80,8 @@ function account_civicrm_custom($op, $groupID, $entityID, &$params) {
 
 function account_civicrm_configure($contactid, $grouoID = NULL) {
 
+	$extdebug			= 0; 	// 	1 = basic // 2 = verbose // 3 = params / 4 = results
+
 	// --- 0. DEURWACHTER (SYSTEM LOCK) ---
     // Dit voorkomt dubbele mails als CiviCRM meerdere processen tegelijk start
     // (bijv. Webform submit + Hook trigger). Dit werkt over processen heen.
@@ -92,7 +94,7 @@ function account_civicrm_configure($contactid, $grouoID = NULL) {
             // Ja: Iemand is al bezig. Stop direct.
             // (Zet extdebug op 0 of 1 als je dit niet in je log wilt zien)
             if (function_exists('wachthond')) {
-                wachthond(1, 1, "ACCOUNT CONFIG", "SKIPPED (Locked by Cache - prevent duplicate)");
+                wachthond($extdebug,1, "ACCOUNT CONFIG", "SKIPPED (Locked by Cache - prevent duplicate)");
             }
             return;
         }
@@ -117,7 +119,7 @@ function account_civicrm_configure($contactid, $grouoID = NULL) {
         $processing_account[$contactid] = true;
     }
 */
-	$extdebug			= 3; 	// 	1 = basic // 2 = verbose // 3 = params / 4 = results
+	$extdebug			= 0; 	// 	1 = basic // 2 = verbose // 3 = params / 4 = results
 	$apidebug			= FALSE;
 
 	// START TIMER
@@ -469,7 +471,7 @@ function account_civicrm_configure($contactid, $grouoID = NULL) {
  */
 function account_generate_onetimelink($cmsid, $checkdate = NULL)
 {
-    $extdebug = 3; // 1=basic, 2=verbose, 3=params, 4=results
+    $extdebug = 0; // 1=basic, 2=verbose, 3=params, 4=results
 
     if (empty($cmsid)) {
         wachthond($extdebug, 2, 'cmsid', "[EMPTY]");
@@ -523,7 +525,7 @@ function account_generate_onetimelink($cmsid, $checkdate = NULL)
  */
 function account_generate_checksum($crmid, $checkdate = NULL)
 {
-    $extdebug = 3; // 1=basic, 2=verbose, 3=params, 4=results
+    $extdebug = 0; // 1=basic, 2=verbose, 3=params, 4=results
 
     if (empty($crmid)) {
         wachthond($extdebug, 2, 'crmid', "[EMPTY]");
@@ -576,7 +578,7 @@ function account_generate_checksum($crmid, $checkdate = NULL)
  */
 function account_write_onetimelink($crmid, $url, $date)
 {
-    $extdebug = 3;
+    $extdebug = 0;
     $apidebug = FALSE;
 
     if (empty($crmid) || empty($url) || empty($date)) {
@@ -617,7 +619,7 @@ function account_write_onetimelink($crmid, $url, $date)
  */
 function account_write_checksum($crmid, $code, $date, $link)
 {
-    $extdebug = 3;
+    $extdebug = 0;
     $apidebug = FALSE;
 
     if (empty($crmid) || empty($code) || empty($date) || empty($link)) {
@@ -658,7 +660,7 @@ function account_write_checksum($crmid, $code, $date, $link)
  */
 function account_send_onetimelink($crmid, $msgid = NULL)
 {
-    $extdebug = 3; 
+    $extdebug = 0; 
     
     if ($msgid == NULL) { $msgid = 621; }
 
